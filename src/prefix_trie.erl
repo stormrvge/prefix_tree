@@ -1,115 +1,94 @@
 -module(prefix_trie).
--export([start/0, empty/0, get/2, contains/2, add/2, add_word/3, remove/2, map/2]).
 
--record(node, {char, data, is_word, children}).
-
+-export([start/0, new/0, insert/3, get/2, remove/2, contains/2, filter/2, map/2, foldl/3, foldr/3]).
 
 start() ->
-  T1 = add_word("hello", 100, empty()),
-  T2 = add_word("world", 150, T1),
-  T3 = add_word("foo", 200, T2),
-  T4 = add_word("bar", 300, T3),
-  T5 = add_word("foobar", 400, T4),
-  T6 = add_word("foofoo", 500, T5),
+  Trie = prefix_trie:new(),
+  Trie2 = prefix_trie:insert("abc", 100, Trie),
+  Trie3 = prefix_trie:insert("abcd", 200, Trie2),
+  Trie4 = prefix_trie:insert("ab", 300, Trie3),
+  Trie4.
+%%  Fun = fun(Key, Val, Acc) -> Val + Acc end,
+%%  Res = prefix_trie:foldl(Fun, 0, Trie4),
+%%  Res.
 
-  MapFn = fun(S) -> S#node{data = S#node.data + 10} end,
-  T11 = prefix_trie:map(MapFn, T6),
-  Word = get("hello", T6),
-  io:format("~w\n", [T4]).
+new() ->
+  [].
 
-empty() -> #node{children = dict:new()}.
-
-add(Word, Data) ->
-  add_word(Word, Data, empty()).
-
-remove(Word, Tree) ->
-  remove_word(Word, Tree, []).
-
-get(Word, Tree) ->
-  get_word(Word, Tree).
-
-%%% Internal functions %%%
-add_word([], Data, Node) ->
-  Node#node{is_word = true, data = Data};
-add_word([Char | Chars], Data, Node) ->
-  Children = Node#node.children,
-  case dict:is_key(Char, Children) of
-    true ->
-      Child = dict:fetch(Char, Children),
-      NewChild = add_word(Chars, Data, Child),
-      Node#node{children = dict:store(Char, NewChild, Children)};
-    false ->
-      NewChild = add_word(Chars, Data, empty()),
-      Node#node{children = dict:store(Char, NewChild, Children)}
+get(Bin, []) ->
+  not_found;
+get(Bin, [{Bin, V} | _]) ->
+  {ok, V};
+get(Bin, [H | T]) ->
+  case cmp(Bin, H) of
+    less -> not_found;
+    _ -> get(Bin, T)
   end.
 
-remove_word([], Node, Parents) ->
-  case Node#node.is_word of
-    true ->
-      case dict:size(Node#node.children) of
-        0 ->
-          remove_node(Parents, Node);
-        _ ->
-          Node#node{is_word = false, data = undefined}
-      end;
-    false ->
-      Node
+insert(Bin, V, []) ->
+  [{Bin, V}];
+insert(Bin, V, [{B, V1} | T]) when Bin =:= B ->
+  [{B, V} | T];
+insert(Bin, V, [H | T]) ->
+  case cmp(Bin, H) of
+    less -> [{Bin, V} | [H | T]];
+    _ -> [H | insert(Bin, V, T)]
+  end.
+
+remove(Bin, []) ->
+  [];
+remove(Bin, [{Bin, _} | T]) ->
+  T;
+remove(Bin, [H | T]) ->
+  case cmp(Bin, H) of
+    less -> [H | T];
+    _ -> [H | remove(Bin, T)]
+  end.
+
+contains(Bin, []) ->
+  false;
+contains(Bin, [{Bin, _} | _]) ->
+  true;
+contains(Bin, [H | T]) ->
+  case cmp(Bin, H) of
+    less -> false;
+    _ -> contains(Bin, T)
+  end.
+
+filter(_, []) ->
+  [];
+filter(Pred, [{Bin, V} | T]) ->
+  case Pred(V) of
+    true -> [{Bin, V} | filter(Pred, T)];
+    false -> filter(Pred, T)
   end;
-remove_word([Char | Chars], Node, Parents) ->
-  Children = Node#node.children,
-  case dict:is_key(Char, Children) of
-    true ->
-      Child = dict:fetch(Char, Children),
-      NewChild = remove_word(Chars, Child, [Node | Parents]),
-      Node#node{children = dict:store(Char, NewChild, Children)};
-    false ->
-      Node
+filter(Pred, [H | T]) ->
+  filter(Pred, T).
+
+map(_, []) ->
+  [];
+map(Fun, [{Bin, V} | T]) ->
+  [{Bin, Fun(V)} | map(Fun, T)];
+map(Fun, [H | T]) ->
+  map(Fun, T).
+
+cmp(B1, {B2, _}) ->
+  case B1 < B2 of
+    true -> less;
+    false -> more
   end.
 
-remove_node([], Node) ->
-  Node#node{children = dict:erase(Node#node.char, Node#node.children)};
-remove_node([Parent | Parents], Node) ->
-  case dict:size(Node#node.children) of
-    0 ->
-      remove_node(Parents, Parent#node{children = dict:erase(Node#node.char, Parent#node.children)});
-    _ ->
-      Node#node{is_word = false, data = undefined}
-  end.
+foldl(_Fun, Acc, []) ->
+  Acc;
+foldl(Fun, Acc, [{_, V} | T]) ->
+  foldl(Fun, Fun(Acc, V), T);
+foldl(Fun, Acc, [H | T]) ->
+  foldl(Fun, Acc, T).
 
-%%% Internal functions %%%
-get_word([], Node) ->
-  case Node of
-    undefined ->
-      undefined;
-    #node{is_word = true} ->
-      Node#node.data;
-    #node{} ->
-      undefined
-  end;
-get_word([Char | Chars], Node) ->
-  Children = Node#node.children,
-  case dict:is_key(Char, Children) of
-    true ->
-      Child = dict:fetch(Char, Children),
-      get_word(Chars, Child);
-    false ->
-      undefined
-  end.
+foldr(_Fun, Acc, []) ->
+  Acc;
+foldr(Fun, Acc, L) ->
+  lists:foldr(fun({_, V}, Acc1) -> Fun(V, Acc1) end, Acc, L).
 
-contains(Word, Tree) ->
-  case get(Word, Tree) of
-    undefined ->
-      false;
-    _ ->
-      true
-  end.
-
-map(_Fun, undefined) ->
-  undefined;
-map(Fun, Node) ->
-  Children = Node#node.children,
-  NewChildren = dict:fold(fun(Char, Child, Acc) ->
-    NewChild = map(Fun, Child),
-    dict:store(Char, NewChild, Acc)
-                          end, dict:new(), Children),
-  Fun(Node#node{children = NewChildren}).
+-define(less, 1).
+-define(more, 2).
