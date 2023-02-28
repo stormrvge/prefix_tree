@@ -4,6 +4,8 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-record(node, {char, data, is_word, children}).
+
 prefix_trie_test() ->
   % Test empty trie
   ?assertEqual(false, prefix_trie:contains([], empty())),
@@ -44,23 +46,26 @@ prefix_trie_test() ->
   T9 = prefix_trie:remove("hello", T8),
   ?assertEqual(false, prefix_trie:contains("hello", T9)),
 
-  % Test filter
-  Filter = fun(S) -> length(S) > 3 end,
-  T10 = prefix_trie:filter(Filter, T6),
-  ?assertEqual(true, prefix_trie:contains("world", T10)),
-  ?assertEqual(true, prefix_trie:contains("foobar", T10)),
-  ?assertEqual(true, prefix_trie:contains("foofoo", T10)),
-  ?assertEqual(false, prefix_trie:contains("foo", T10)),
-  ?assertEqual(false, prefix_trie:contains("bar", T10)).
+%%  % filter the trie for words starting with "foo"
+%%  F = fun(N) -> N#node.data < 200 end,
+%%  FilteredTrie = prefix_trie:filter(F, T6),
 %%
-%%  % Test map
-%%  MapFn = fun(S) -> string:to_upper(S) end,
-%%  T11 = prefix_trie:map(MapFn, T6),
-%%  ?assertEqual(true, prefix_trie:lookup("WORLD", T11)),
-%%  ?assertEqual(true, prefix_trie:lookup("FOOBAR", T11)),
-%%  ?assertEqual(true, prefix_trie:lookup("FOOFOO", T11)),
-%%  ?assertEqual(true, prefix_trie:lookup("FOO", T11)),
-%%  ?assertEqual(true, prefix_trie:lookup("BAR", T11)).
+%%  % check that the filtered trie only contains "foobar" and "foofoo"
+%%  ?assertEqual(false, prefix_trie:contains("world", FilteredTrie)),
+%%  ?assertEqual(false, prefix_trie:contains("foo", FilteredTrie)),
+%%  ?assertEqual(true, prefix_trie:contains("bar", FilteredTrie)),
+%%  ?assertEqual(true, prefix_trie:contains("foobar", FilteredTrie)),
+%%  ?assertEqual(true, prefix_trie:contains("foofoo", FilteredTrie)).
+%%
+
+  % Test map
+  MapFn = fun(S) -> S#node{data = S#node.data + 10} end,
+  T11 = prefix_trie:map(MapFn, T6),
+  ?assertEqual(110, prefix_trie:get("world", T11)),
+  ?assertEqual(210, prefix_trie:get("foo", T11)),
+  ?assertEqual(310, prefix_trie:get("bar", T11)),
+  ?assertEqual(410, prefix_trie:get("foobar", T11)),
+  ?assertEqual(510, prefix_trie:get("foofoo", T11)).
 %%
 %%% Test foldl
 %%test_foldl() ->

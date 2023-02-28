@@ -1,5 +1,6 @@
 -module(prefix_trie).
--export([start/0, empty/0, get/2, contains/2, add/2, add_word/3, remove/2, to_list/1, filter/2]).
+-export([start/0, empty/0, get/2, contains/2, add/2, add_word/3, remove/2, map/2]).
+
 -record(node, {char, data, is_word, children}).
 
 
@@ -10,6 +11,9 @@ start() ->
   T4 = add_word("bar", 300, T3),
   T5 = add_word("foobar", 400, T4),
   T6 = add_word("foofoo", 500, T5),
+
+  MapFn = fun(S) -> S#node{data = S#node.data + 10} end,
+  T11 = prefix_trie:map(MapFn, T6),
   Word = get("hello", T6),
   io:format("~w\n", [T4]).
 
@@ -21,23 +25,10 @@ add(Word, Data) ->
 remove(Word, Tree) ->
   remove_word(Word, Tree, []).
 
-to_list(Tree) ->
-  to_list(Tree, []).
-
-map(F, Tree) ->
-  map_nodes(F, Tree).
-
-foldl(Fun, Acc, Tree) ->
-  foldl(Fun, Acc, Tree, []).
-
-foldr(Fun, Acc, Tree) ->
-  foldr(Fun, Acc, Tree, []).
-
 get(Word, Tree) ->
   get_word(Word, Tree).
 
 %%% Internal functions %%%
-
 add_word([], Data, Node) ->
   Node#node{is_word = true, data = Data};
 add_word([Char | Chars], Data, Node) ->
@@ -85,16 +76,6 @@ remove_node([Parent | Parents], Node) ->
       Node#node{is_word = false, data = undefined}
   end.
 
-to_list(Node, Acc) ->
-  Children = Node#node.children,
-  Lists = [to_list(Child, []) || {_Char, Child} <- dict:to_list(Children)],
-  case Node#node.is_word of
-    true ->
-      [Node#node.data | lists:append(Lists, Acc)];
-    false ->
-      lists:append(Lists, Acc)
-  end.
-
 %%% Internal functions %%%
 get_word([], Node) ->
   case Node of
@@ -123,52 +104,12 @@ contains(Word, Tree) ->
       true
   end.
 
-foldl(Fun, Acc, #node{is_word = true, data = Data, children = Children}, Parents) ->
-  foldl_children(Fun, Acc, Children, [Data | Parents]);
-foldl(Fun, Acc, #node{children = Children}, Parents) ->
-  foldl_children(Fun, Acc, Children, Parents).
-
-foldl_children(Fun, Acc, [], Parents) ->
-  Acc;
-foldl_children(Fun, Acc, [{_Char, Child} | Children], Parents) ->
-  Acc2 = foldl(Fun, Acc, Child, Parents),
-  foldl_children(Fun, Fun(Acc2, Child, Parents), Children, Parents).
-
-foldr(Fun, Acc, #node{is_word = true, data = Data, children = Children}, Parents) ->
-  foldr_children(Fun, Acc, Children, [Data | Parents]);
-foldr(Fun, Acc, #node{children = Children}, Parents) ->
-  foldr_children(Fun, Acc, Children, Parents).
-
-foldr_children(Fun, Acc, [], Parents) ->
-  Acc;
-foldr_children(Fun, Acc, Children, Parents) ->
-  [{_Char, Child} | Rest] = lists:reverse(Children),
-  Acc2 = foldr(Fun, Acc, Child, Parents),
-  foldr_children(Fun, Fun(Acc2, Child, Parents), lists:reverse(Rest), Parents).
-
-map_nodes(F, Node) ->
+map(_Fun, undefined) ->
+  undefined;
+map(Fun, Node) ->
   Children = Node#node.children,
-  MappedChildren = dict:map(fun({_Char, Child}) ->
-    map_nodes(F, Child)
-                            end, Children),
-  Node#node{data = F(Node#node.data), children = MappedChildren}.
-
-
-
-
-filter(P, Tree) ->
-  filter_nodes(P, Tree).
-
-filter_nodes(_P, #node{is_word = true, data = Data, children = Children}) ->
-  case _P(Data) of
-    true -> #node{is_word = true, data = Data, children = filter_children(_P, Children)};
-    false -> undefined
-  end;
-filter_nodes(P, #node{is_word = false, children = Children}) ->
-  #node{children = filter_children(P, Children)}.
-
-filter_children(P, Children) ->
-  dict:from_list(
-    [{Char, filter_nodes(P, Child)}
-      || {Char, Child} <- dict:to_list(Children), filter_nodes(P, Child) /= undefined]
-  ).
+  NewChildren = dict:fold(fun(Char, Child, Acc) ->
+    NewChild = map(Fun, Child),
+    dict:store(Char, NewChild, Acc)
+                          end, dict:new(), Children),
+  Fun(Node#node{children = NewChildren}).
