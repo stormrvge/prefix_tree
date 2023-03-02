@@ -1,33 +1,33 @@
 -module(prefix_tree).
--export([empty/0, insert/3, delete/2, search/2, filter/2, map/2, foldl/3, foldr/3]).
+-export([prefix_tree_empty/0, prefix_tree_insert/3, prefix_tree_delete/2, prefix_tree_search/2, prefix_tree_filter/2, prefix_tree_map/2, foldl/3, foldr/3]).
 
 -record(node, {value = undefined, children = dict:new()}).
 
-empty() ->
+prefix_tree_empty() ->
   #node{}.
 
-insert([], Value, Node) ->
+prefix_tree_insert([], Value, Node) ->
   #node{value = Value, children = Node#node.children};
-insert([Head|Tail], Value, Node) ->
+prefix_tree_insert([Head|Tail], Value, Node) ->
   Children = Node#node.children,
   case dict:find(Head, Children) of
     error ->
-      Child = insert(Tail, Value, empty()),
+      Child = prefix_tree_insert(Tail, Value, prefix_tree_empty()),
       #node{children = dict:store(Head, Child, Children)};
     {ok, Child} ->
-      Child1 = insert(Tail, Value, Child),
+      Child1 = prefix_tree_insert(Tail, Value, Child),
       #node{children = dict:store(Head, Child1, Children)}
   end.
 
-delete([], Node) ->
+prefix_tree_delete([], Node) ->
   #node{value = undefined, children = Node#node.children};
-delete([Head|Tail], Node) ->
+prefix_tree_delete([Head|Tail], Node) ->
   Children = Node#node.children,
   case dict:find(Head, Children) of
     error ->
       Node;
     {ok, Child} ->
-      Child1 = delete(Tail, Child),
+      Child1 = prefix_tree_delete(Tail, Child),
       case dict:is_empty(Child1#node.children) andalso Child1#node.value == undefined of
         true ->
           #node{children = dict:erase(Head, Children)};
@@ -36,24 +36,24 @@ delete([Head|Tail], Node) ->
       end
   end.
 
-search([], Node) ->
+prefix_tree_search([], Node) ->
   Node#node.value;
-search([Head|Tail], Node) ->
+prefix_tree_search([Head|Tail], Node) ->
   Children = Node#node.children,
   case dict:find(Head, Children) of
     error ->
       undefined;
     {ok, Child} ->
-      search(Tail, Child)
+      prefix_tree_search(Tail, Child)
   end.
 
-filter(Predicate, Node) ->
+prefix_tree_filter(Predicate, Node) ->
   case Node#node.value of
     undefined ->
       Children = Node#node.children,
       NewChildren = dict:fold(
         fun(Key, Child, Acc) ->
-          FilteredChild = filter(Predicate, Child),
+          FilteredChild = prefix_tree_filter(Predicate, Child),
           case dict:is_empty(FilteredChild#node.children) andalso FilteredChild#node.value == undefined of
             true -> Acc;
             false -> dict:store(Key, FilteredChild, Acc)
@@ -67,14 +67,14 @@ filter(Predicate, Node) ->
       end
   end.
 
-map(Transformer, Node) ->
-  map(Transformer, Node, empty()).
+prefix_tree_map(Transformer, Node) ->
+  map(Transformer, Node, prefix_tree_empty()).
 
 map(Transformer, Node, NewNode) ->
   case Node#node.value of
     undefined ->
       Children = Node#node.children,
-      NewChildren = dict:map(fun(_, Child) -> map(Transformer, Child, empty()) end, Children),
+      NewChildren = dict:map(fun(_, Child) -> map(Transformer, Child, prefix_tree_empty()) end, Children),
       NewNode#node{children = NewChildren};
     Value ->
       NewValue = Transformer(Value),
