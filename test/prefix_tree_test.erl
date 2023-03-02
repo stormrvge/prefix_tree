@@ -6,7 +6,7 @@
 
 prefix_tree_test() ->
   % Test empty trie
-  %% ?assertEqual(false, prefix_tree:contains([], prefix_tree:empty())),
+  ?assertEqual(undefined, prefix_tree:search([], prefix_tree:empty())),
 
   % Test single value
   T1 = prefix_tree:insert("hello", 50, prefix_tree:empty()),
@@ -26,42 +26,33 @@ prefix_tree_test() ->
   ?assertEqual(undefined, prefix_tree:search("fo", T5)),
   ?assertEqual(undefined, prefix_tree:search("foob", T5)),
 
-  %% Test remove
+  %% remove test
   T6 = prefix_tree:delete("foofoo", T5),
   ?assertEqual(undefined, prefix_tree:search("foofoo", T6)),
 
   T7 = prefix_tree:delete("world", T6),
   ?assertEqual(undefined, prefix_tree:search("world", T7)),
 
-  %%  % filter the trie for words starting with "foo"
+  %% filter the trie for words starting with "foo"
   BiggerThanTwo = fun(Val) -> Val > 250 end,
   FilteredTrie = prefix_tree:filter(BiggerThanTwo, T5),
 
-  ?assertEqual([400, 300], FilteredTrie),
-%%
-  %% Test map
+  ?assertEqual(undefined, prefix_tree:search("world", FilteredTrie)),
+  ?assertEqual(undefined, prefix_tree:search("bar", FilteredTrie)),
+  ?assertEqual(300, prefix_tree:search("foobar", FilteredTrie)),
+  ?assertEqual(400, prefix_tree:search("foofoo", FilteredTrie)),
+
+  %% map tests
   Fun = fun(X) -> X * 2 end,
   T11 = prefix_tree:map(Fun, T5),
   ?assertEqual(200, prefix_tree:search("world", T11)),
   ?assertEqual(400, prefix_tree:search("bar", T11)),
   ?assertEqual(600, prefix_tree:search("foobar", T11)),
-  ?assertEqual(800, prefix_tree:search("foofoo", T11)).
+  ?assertEqual(800, prefix_tree:search("foofoo", T11)),
 
-%%% Test foldl
-%%test_foldl() ->
-
-%%
-%%% Test is_monoid
-%%test_is_monoid() ->
-%%  {ok, Trie} = prefix_tree:new(),
-%%  Trie2 = prefix_tree:add("abc", "value1", Trie),
-%%  Trie3 = prefix_tree:add("abcd", "value2", Trie2),
-%%  Trie4 = prefix_tree:add("ab", "value3", Trie3),
-%%  Trie5 = prefix_tree:add("ab", "value4", Trie4),
-%%  Trie6 = prefix_tree:remove("ab", Trie5),
-%%  Zero = prefix_tree:empty(),
-%%  ?assertEqual(true, prefix_tree:is_monoid(Trie)),
-%%  ?assertEqual(true, prefix_tree:is_monoid(Trie4)),
-%%  ?assertEqual(true, prefix_tree:is_monoid(Trie6)),
-%%  ?assertEqual(true, prefix_tree:is_monoid(Zero)).
-
+  %% foldr and foldl tests
+  Sum = fun(Value, Acc) -> Value + Acc end,
+  FoldlSum = prefix_tree:foldl(Sum, 0, T5),
+  FoldrSum = prefix_tree:foldr(Sum, 0, T5),
+  ?assertEqual(1050, FoldlSum),
+  ?assertEqual(1050, FoldrSum).

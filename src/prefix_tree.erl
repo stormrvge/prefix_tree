@@ -1,5 +1,5 @@
 -module(prefix_tree).
--export([empty/0, insert/3, delete/2, search/2, filter/2, map/2]).
+-export([empty/0, insert/3, delete/2, search/2, filter/2, map/2, foldl/3, foldr/3]).
 
 -record(node, {value = undefined, children = dict:new()}).
 
@@ -48,17 +48,22 @@ search([Head|Tail], Node) ->
   end.
 
 filter(Predicate, Node) ->
-  filter(Predicate, Node, []).
-
-filter(Predicate, Node, Acc) ->
   case Node#node.value of
     undefined ->
       Children = Node#node.children,
-      dict:fold(fun(_, Child, Acc1) -> filter(Predicate, Child, Acc1) end, Acc, Children);
+      NewChildren = dict:fold(
+        fun(Key, Child, Acc) ->
+          FilteredChild = filter(Predicate, Child),
+          case dict:is_empty(FilteredChild#node.children) andalso FilteredChild#node.value == undefined of
+            true -> Acc;
+            false -> dict:store(Key, FilteredChild, Acc)
+          end
+        end, dict:new(), Children),
+      #node{children = NewChildren};
     Value ->
       case Predicate(Value) of
-        true -> [Value|Acc];
-        false -> Acc
+        true -> #node{value = Value, children = dict:new()};
+        false -> #node{}
       end
   end.
 
@@ -74,4 +79,22 @@ map(Transformer, Node, NewNode) ->
     Value ->
       NewValue = Transformer(Value),
       NewNode#node{value = NewValue}
+  end.
+
+foldl(Fun, Acc, Node) ->
+  case Node#node.value of
+    undefined ->
+      Children = Node#node.children,
+      dict:fold(fun(_, Child, Acc1) -> foldl(Fun, Acc1, Child) end, Acc, Children);
+    Value ->
+      Fun(Value, Acc)
+  end.
+
+foldr(Fun, Acc, Node) ->
+  case Node#node.value of
+    undefined ->
+      Children = Node#node.children,
+      dict:fold(fun(_, Child, Acc1) -> foldr(Fun, Acc1, Child) end, Acc, Children);
+    Value ->
+      Fun(Value, Acc)
   end.
