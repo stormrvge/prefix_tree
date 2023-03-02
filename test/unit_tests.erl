@@ -1,6 +1,6 @@
--module(prefix_tree_test).
+-module(unit_tests).
 
--import(prefix_tree, [empty/0, insert/3, delete/2, search/2, filter/2, map/2]).
+-import(prefix_tree, [empty/0, insert/3, delete/2, search/2, filter/2, map/2, foldl/3, foldr/3]).
 
 -include_lib("eunit/include/eunit.hrl").
 
