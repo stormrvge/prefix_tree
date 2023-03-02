@@ -1,8 +1,10 @@
 # Лабораторная работа №2. Дисциплина "Функциональное программирование".
-## Вариант "Prefix Tree"
-## Выполнил: Свистухин Андрей, Р34112
 
-### Вставить элемент в коллекцию
+### Вариант "Prefix Tree"
+### Выполнил: Свистухин Андрей, Р34112
+
+### Реализация функций коллекции
+#### Вставить элемент в коллекцию
 ```Erlang
 insert([], Value, Node) ->
   #node{value = Value, children = Node#node.children};
@@ -18,7 +20,7 @@ insert([Head|Tail], Value, Node) ->
   end.
 ```
 
-### Удалить элемент из коллекции
+#### Удалить элемент из коллекции
 ```Erlang
 delete([], Node) ->
   #node{value = undefined, children = Node#node.children};
@@ -38,7 +40,7 @@ delete([Head|Tail], Node) ->
   end.
 ```
 
-### Найти значение элемента в коллекции
+#### Найти значение элемента в коллекции
 ```Erlang
 search([], Node) ->
   Node#node.value;
@@ -52,7 +54,7 @@ search([Head|Tail], Node) ->
   end.
 ```
 
-### Фильтрация коллекции по предикату
+#### Фильтрация коллекции по предикату
 ```Erlang
 filter(Predicate, Node) ->
   case Node#node.value of
@@ -75,7 +77,7 @@ filter(Predicate, Node) ->
   end.
 ```
 
-### Применение функции ко всем элементам коллекции (map)
+#### Применение функции ко всем элементам коллекции (map)
 ```Erlang
 map(Transformer, Node) ->
   map(Transformer, Node, empty()).
@@ -92,7 +94,7 @@ map(Transformer, Node, NewNode) ->
   end.
 ```
 
-### Левая/правая свертка коллекции
+#### Левая/правая свертка коллекции
 ```Erlang
 foldl(Fun, Acc, Node) ->
   case Node#node.value of
