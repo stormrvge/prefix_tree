@@ -24,5 +24,7 @@ jobs:
         run: rebar3 compile
       - name: Format
         run: rebar3 steamroll
-      - name: Run tests
-        run: rebar3 do eunit, ct
+      - name: Run unit tests
+        run: rebar3 do eunit
+      - name: Run proper tests
+        run: rebar3 proper
