@@ -1,6 +1,16 @@
 -module(unit_tests).
 
--import(prefix_tree, [prefix_tree_empty/0, prefix_tree_insert/3, prefix_tree_delete/2, prefix_tree_search/2, prefix_tree_filter/2, prefix_tree_map/2, foldl/3, foldr/3]).
+-import(prefix_tree, [
+prefix_tree_empty/0,
+prefix_tree_insert/3,
+prefix_tree_delete/2,
+prefix_tree_search/2,
+prefix_tree_filter/2,
+prefix_tree_map/2,
+foldl/3,
+foldr/3,
+prefix_tree_merge/2
+]).
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -56,3 +66,31 @@ prefix_tree_test() ->
   FoldrSum = prefix_tree:foldr(Sum, 0, T5),
   ?assertEqual(1050, FoldlSum),
   ?assertEqual(1050, FoldrSum).
+
+prefix_tree_merge_test() ->
+  Node1 = prefix_tree_insert("foo", 1, prefix_tree_empty()),
+  Node2 = prefix_tree_insert("bar", 2, Node1),
+  Node3 = prefix_tree_insert("baz", 3, Node2),
+
+  % create tree 2
+  Node4 = prefix_tree_insert("foo", 4, prefix_tree_empty()),
+  Node5 = prefix_tree_insert("qux", 5, Node4),
+
+  % merge the two trees
+  Merged = prefix_tree_merge(Node3, Node5),
+
+  % check that the merged tree has all the expected values
+  ?assertEqual(1, prefix_tree_search("foo", Merged)),
+  ?assertEqual(2, prefix_tree_search("bar", Merged)),
+  ?assertEqual(3, prefix_tree_search("baz", Merged)),
+  ?assertEqual(5, prefix_tree_search("qux", Merged)).
+
+prefix_tree_monoid_test() ->
+  ?assertEqual(prefix_tree_empty(), prefix_tree_merge(prefix_tree_empty(), prefix_tree_empty())),
+  ?assertEqual(prefix_tree_merge(prefix_tree_empty(), prefix_tree_empty()), prefix_tree_empty()),
+  Tree1 = prefix_tree_insert("hello", "world", prefix_tree_empty()),
+  Tree2 = prefix_tree_insert("goodbye", "everyone", prefix_tree_empty()),
+  Tree3 = prefix_tree_insert("morning", "sir", prefix_tree_empty()),
+  ?assertEqual(prefix_tree_merge(Tree1, prefix_tree_merge(Tree2, Tree3)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree2), Tree3)),
+  ?assertEqual(prefix_tree_merge(Tree2, prefix_tree_merge(Tree1, Tree3)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree2), Tree3)),
+  ?assertEqual(prefix_tree_merge(Tree3, prefix_tree_merge(Tree1, Tree2)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree2), Tree3)).
