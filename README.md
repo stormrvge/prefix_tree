@@ -114,3 +114,25 @@ foldr(Fun, Acc, Node) ->
       Fun(Value, Acc)
   end.
 ```
+
+#### Слияние деревьев
+```Erlang
+prefix_tree_merge(Tree1, Tree2) ->
+  #node{value = Value, children = Children} = Tree1,
+  #node{value = _Value2, children = Children2} = Tree2,
+  case Value of
+    undefined ->
+      NewChildren = dict:fold(
+        fun(Key, Child2, Acc) ->
+          case dict:find(Key, Children) of
+            error ->
+              dict:store(Key, Child2, Acc);
+            {ok, Child1} ->
+              dict:store(Key, prefix_tree_merge(Child1, Child2), Acc)
+          end
+        end, Children, Children2),
+      #node{value = undefined, children = NewChildren};
+    _ ->
+      Tree1
+  end.
+```
