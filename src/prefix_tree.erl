@@ -6,8 +6,8 @@
   prefix_tree_search/2,
   prefix_tree_filter/2,
   prefix_tree_map/2,
-  foldl/3,
-  foldr/3,
+  prefix_tree_foldl/3,
+  prefix_tree_foldr/3,
   prefix_tree_merge/2
 ]).
 
@@ -91,20 +91,20 @@ map(Transformer, Node, NewNode) ->
       NewNode#node{value = NewValue}
   end.
 
-foldl(Fun, Acc, Node) ->
+prefix_tree_foldl(Fun, Acc, Node) ->
   case Node#node.value of
     undefined ->
       Children = Node#node.children,
-      dict:fold(fun(_, Child, Acc1) -> foldl(Fun, Acc1, Child) end, Acc, Children);
+      dict:fold(fun(_, Child, Acc1) -> prefix_tree_foldl(Fun, Acc1, Child) end, Acc, Children);
     Value ->
       Fun(Value, Acc)
   end.
 
-foldr(Fun, Acc, Node) ->
+prefix_tree_foldr(Fun, Acc, Node) ->
   case Node#node.value of
     undefined ->
       Children = Node#node.children,
-      dict:fold(fun(_, Child, Acc1) -> foldr(Fun, Acc1, Child) end, Acc, Children);
+      dict:fold(fun(_, Child, Acc1) -> prefix_tree_foldr(Fun, Acc1, Child) end, Acc, Children);
     Value ->
       Fun(Value, Acc)
   end.

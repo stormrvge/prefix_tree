@@ -7,8 +7,8 @@ prefix_tree_delete/2,
 prefix_tree_search/2,
 prefix_tree_filter/2,
 prefix_tree_map/2,
-foldl/3,
-foldr/3,
+prefix_tree_foldl/3,
+prefix_tree_foldr/3,
 prefix_tree_merge/2
 ]).
 
@@ -62,8 +62,8 @@ prefix_tree_test() ->
 
   %% foldr and foldl tests
   Sum = fun(Value, Acc) -> Value + Acc end,
-  FoldlSum = prefix_tree:foldl(Sum, 0, T5),
-  FoldrSum = prefix_tree:foldr(Sum, 0, T5),
+  FoldlSum = prefix_tree:prefix_tree_foldl(Sum, 0, T5),
+  FoldrSum = prefix_tree:prefix_tree_foldr(Sum, 0, T5),
   ?assertEqual(1050, FoldlSum),
   ?assertEqual(1050, FoldrSum).
 
@@ -91,6 +91,9 @@ prefix_tree_monoid_test() ->
   Tree1 = prefix_tree_insert("hello", "world", prefix_tree_empty()),
   Tree2 = prefix_tree_insert("goodbye", "everyone", prefix_tree_empty()),
   Tree3 = prefix_tree_insert("morning", "sir", prefix_tree_empty()),
+  Tree4 = prefix_tree_insert("morning", "another_sir", prefix_tree_empty()),
   ?assertEqual(prefix_tree_merge(Tree1, prefix_tree_merge(Tree2, Tree3)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree2), Tree3)),
   ?assertEqual(prefix_tree_merge(Tree2, prefix_tree_merge(Tree1, Tree3)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree2), Tree3)),
-  ?assertEqual(prefix_tree_merge(Tree3, prefix_tree_merge(Tree1, Tree2)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree2), Tree3)).
+  ?assertEqual(prefix_tree_merge(Tree3, prefix_tree_merge(Tree1, Tree2)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree2), Tree3)),
+  ?assertNotEqual(prefix_tree_merge(Tree4, prefix_tree_merge(Tree1, Tree3)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree3), Tree4)),
+  ?assertNotEqual(prefix_tree_merge(Tree3, prefix_tree_merge(Tree1, Tree4)), prefix_tree_merge(prefix_tree_merge(Tree1, Tree4), Tree3)).
