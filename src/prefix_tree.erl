@@ -8,8 +8,7 @@
   prefix_tree_map/2,
   prefix_tree_foldl/3,
   prefix_tree_foldr/3,
-  prefix_tree_merge/2,
-  prefix_tree_equal/2
+  prefix_tree_merge/2
 ]).
 
 -record(node, {value = undefined, children = dict:new()}).
@@ -130,23 +129,3 @@ prefix_tree_merge(Tree1, Tree2) ->
       end
     end, Children1, Children2),
   #node{value = MergedValue, children = NewChildren}.
-
-prefix_tree_equal(Tree1, Tree2) ->
-  Tree1Value = Tree1#node.value,
-  Tree2Value = Tree2#node.value,
-  Tree1Children = Tree1#node.children,
-  Tree2Children = Tree2#node.children,
-
-  case Tree1Value =:= Tree2Value of
-    false -> false;
-    true ->
-      dict:size(Tree1Children) =:= dict:size(Tree2Children) andalso
-        dict:fold(
-          fun(Key, Child1, Acc) ->
-            case dict:find(Key, Tree2Children) of
-              error -> false;
-              {ok, Child2} ->
-                Acc andalso prefix_tree_equal(Child1, Child2)
-            end
-          end, true, Tree1Children)
-  end.

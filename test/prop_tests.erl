@@ -12,8 +12,7 @@ prefix_tree_filter/2,
 prefix_tree_map/2,
 prefix_tree_foldl/3,
 prefix_tree_foldr/3,
-prefix_tree_merge/2,
-prefix_tree_equal/2
+prefix_tree_merge/2
 ]).
 
 -export([
@@ -156,5 +155,5 @@ prop_prefix_tree_is_monoid() ->
       % tree1 + (tree2 + (tree3 + tree4)) %
       Merge3 = prefix_tree_merge(Tree1, prefix_tree_merge(Tree2, prefix_tree_merge(Tree3, Tree4))),
 
-      prefix_tree_equal(Merge1, Merge2) andalso prefix_tree_equal(Merge2, Merge3)
+      Merge1 =:= Merge2 andalso Merge2 =:= Merge3
     end).
