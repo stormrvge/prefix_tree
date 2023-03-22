@@ -8,7 +8,8 @@
   prefix_tree_map/2,
   prefix_tree_foldl/3,
   prefix_tree_foldr/3,
-  prefix_tree_merge/2
+  prefix_tree_merge/2,
+  prefix_tree_equal/2
 ]).
 
 -record(node, {value = undefined, children = dict:new()}).
@@ -110,20 +111,42 @@ prefix_tree_foldr(Fun, Acc, Node) ->
   end.
 
 prefix_tree_merge(Tree1, Tree2) ->
-  #node{value = Value, children = Children} = Tree1,
-  #node{value = _Value2, children = Children2} = Tree2,
-  case Value of
-    undefined ->
-      NewChildren = dict:fold(
-        fun(Key, Child2, Acc) ->
-          case dict:find(Key, Children) of
-            error ->
-              dict:store(Key, Child2, Acc);
-            {ok, Child1} ->
-              dict:store(Key, prefix_tree_merge(Child1, Child2), Acc)
-          end
-        end, Children, Children2),
-      #node{value = undefined, children = NewChildren};
-    _ ->
-      Tree1
+  #node{value = Value1, children = Children1} = Tree1,
+  #node{value = Value2, children = Children2} = Tree2,
+
+  MergedValue = case {Value1, Value2} of
+                  {undefined, _} -> Value2;
+                  {_, undefined} -> Value1;
+                  {_, _} -> Value1
+                end,
+
+  NewChildren = dict:fold(
+    fun(Key, Child2, Acc) ->
+      case dict:find(Key, Children1) of
+        error ->
+          dict:store(Key, Child2, Acc);
+        {ok, Child1} ->
+          dict:store(Key, prefix_tree_merge(Child1, Child2), Acc)
+      end
+    end, Children1, Children2),
+  #node{value = MergedValue, children = NewChildren}.
+
+prefix_tree_equal(Tree1, Tree2) ->
+  Tree1Value = Tree1#node.value,
+  Tree2Value = Tree2#node.value,
+  Tree1Children = Tree1#node.children,
+  Tree2Children = Tree2#node.children,
+
+  case Tree1Value =:= Tree2Value of
+    false -> false;
+    true ->
+      dict:size(Tree1Children) =:= dict:size(Tree2Children) andalso
+        dict:fold(
+          fun(Key, Child1, Acc) ->
+            case dict:find(Key, Tree2Children) of
+              error -> false;
+              {ok, Child2} ->
+                Acc andalso prefix_tree_equal(Child1, Child2)
+            end
+          end, true, Tree1Children)
   end.

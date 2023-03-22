@@ -12,7 +12,8 @@ prefix_tree_filter/2,
 prefix_tree_map/2,
 prefix_tree_foldl/3,
 prefix_tree_foldr/3,
-prefix_tree_merge/2
+prefix_tree_merge/2,
+prefix_tree_equal/2
 ]).
 
 -export([
@@ -131,40 +132,29 @@ prop_prefix_tree_merge() ->
     end).
 
 prop_prefix_tree_is_monoid() ->
-  ?FORALL({Key, Value}, {
-    string(),
-    integer()
+  ?FORALL({Keys1, Keys2, Keys3, Keys4, Values1, Values2, Values3, Values4}, {
+    vector(100, string()),
+    vector(100, string()),
+    vector(100, string()),
+    vector(100, string()),
+    vector(100, integer()),
+    vector(100, integer()),
+    vector(100, integer()),
+    vector(100, integer())
   },
     begin
       Tree0 = prefix_tree_empty(),
-      Tree1 = prefix_tree_insert(Key, Value, Tree0),
-      Tree2 = prefix_tree_insert(Key ++ "zxc", Value, Tree0),
-      Tree3 = prefix_tree_insert(Key, Value + 50, Tree0),
+      Tree1 = lists:foldl(fun({K, V}, Acc) -> prefix_tree_insert(K, V, Acc) end, Tree0, lists:zip(Keys1, Values1)),
+      Tree2 = lists:foldl(fun({K, V}, Acc) -> prefix_tree_insert(K, V, Acc) end, Tree0, lists:zip(Keys2, Values2)),
+      Tree3 = lists:foldl(fun({K, V}, Acc) -> prefix_tree_insert(K, V, Acc) end, Tree0, lists:zip(Keys3, Values3)),
+      Tree4 = lists:foldl(fun({K, V}, Acc) -> prefix_tree_insert(K, V, Acc) end, Tree0, lists:zip(Keys4, Values4)),
 
-      % tree1 + (tree2 + tree3) == (tree1 + tree2) + tree3 %
-      % in left side Key have Value, in right side key have Value %
-      Merge1 = prefix_tree_merge(Tree1, prefix_tree_merge(Tree2, Tree3)),
-      Merge2 = prefix_tree_merge(prefix_tree_merge(Tree1, Tree2), Tree3),
+      % (tree1 + (tree2 + tree3)) + tree4 %
+      Merge1 = prefix_tree_merge(prefix_tree_merge(Tree1, prefix_tree_merge(Tree2, Tree3)), Tree4),
+      % tree1 + ((tree2 + tree3) + tree4) %
+      Merge2 = prefix_tree_merge(Tree1, prefix_tree_merge(prefix_tree_merge(Tree2, Tree3), Tree4)),
+      % tree1 + (tree2 + (tree3 + tree4)) %
+      Merge3 = prefix_tree_merge(Tree1, prefix_tree_merge(Tree2, prefix_tree_merge(Tree3, Tree4))),
 
-      % tree2 + (tree1 + tree3) == (tree2 + tree3) + tree1 %
-      % in left side Key have Value, in right side key have Value %
-      Merge3 = prefix_tree_merge(Tree2, prefix_tree_merge(Tree1, Tree3)),
-      Merge4 = prefix_tree_merge(prefix_tree_merge(Tree2, Tree3), Tree1),
-
-      % tree2 + (tree1 + tree3) == (tree2 + tree3) + tree1 %
-      % in left side Key have Value, in right side key have Value %
-      Merge5 = prefix_tree_merge(Tree2, prefix_tree_merge(Tree1, Tree3)),
-      Merge6 = prefix_tree_merge(prefix_tree_merge(Tree2, Tree3), Tree1),
-
-      % tree3 + (tree2 + tree1) = (tree2 + tree3) + tree1
-      % in left side Key have Value + 50, in right side key have Value %
-      Merge7 = prefix_tree_merge(Tree3, prefix_tree_merge(Tree2, Tree1)),
-      Merge8 = prefix_tree_merge(prefix_tree_merge(Tree2, Tree3), Tree1),
-
-      % (tree2 + tree3) + tree1 = tree3 + (tree2 + tree1)
-      % in left side Key have Value, in right side key have Value + 50 %
-      Merge9 = prefix_tree_merge(prefix_tree_merge(Tree2, Tree3), Tree1),
-      Merge10 = prefix_tree_merge(Tree3, prefix_tree_merge(Tree2, Tree1)),
-
-      Merge1 =:= Merge2 andalso Merge3 =:= Merge4 andalso Merge5 =:= Merge6 andalso Merge7 /= Merge8 andalso Merge9 /= Merge10
+      prefix_tree_equal(Merge1, Merge2) andalso prefix_tree_equal(Merge2, Merge3)
     end).
