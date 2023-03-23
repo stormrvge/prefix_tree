@@ -154,6 +154,10 @@ prop_prefix_tree_is_monoid() ->
       Merge2 = prefix_tree_merge(Tree1, prefix_tree_merge(prefix_tree_merge(Tree2, Tree3), Tree4)),
       % tree1 + (tree2 + (tree3 + tree4)) %
       Merge3 = prefix_tree_merge(Tree1, prefix_tree_merge(Tree2, prefix_tree_merge(Tree3, Tree4))),
+      % if we merge the same tree we have to get the same tree on output %
+      Merge4 = prefix_tree_merge(Tree1, Tree1),
+      % if we merge tree and empty tree we have to get tree %
+      Merge5 = prefix_tree_merge(Tree2, prefix_tree_empty()),
 
-      Merge1 =:= Merge2 andalso Merge2 =:= Merge3
+      Merge1 =:= Merge2 andalso Merge2 =:= Merge3 andalso Merge4 =:= Tree1 andalso Merge5 =:= Tree2
     end).
